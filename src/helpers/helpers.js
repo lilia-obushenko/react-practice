@@ -10,31 +10,34 @@ function getOwner(ownerId) {
   return usersFromServer.find(user => user.id === ownerId);
 }
 
-const productsWithcategory = productsFromServer.map(product => ({
-  ...product,
-  category: getCategory(product.categoryId),
-}));
+export const products = productsFromServer.map((product) => {
+  const category = getCategory(product.categoryId);
+  const owner = getOwner(category.ownerId);
 
-export const products = productsWithcategory.map(product => ({
-  ...product,
-  owner: getOwner(product.category.ownerId),
-}));
+  return {
+    ...product,
+    category,
+    owner,
+  };
+});
 
-export const findProducts = (content, query) => content.toLowerCase()
+const findProducts = (content, query) => content.toLowerCase()
   .includes(query.toLowerCase().trim());
 
-export const filteredProducts = (
+export const filterProducts = (
   productArray,
   query,
   person,
   selectedCategories,
 ) => {
-  const shownProducts = productArray.filter(
+  let shownProducts = productArray.filter(
     ({ name }) => findProducts(name, query),
   );
 
-  if (!person && selectedCategories.length === 0) {
-    return shownProducts;
+  if (person) {
+    shownProducts = shownProducts.filter(
+      product => product.owner.name === person.name,
+    );
   }
 
   if (selectedCategories.length > 0) {
@@ -44,5 +47,5 @@ export const filteredProducts = (
       )));
   }
 
-  return shownProducts.filter(product => product.owner.name === person.name);
+  return shownProducts;
 };

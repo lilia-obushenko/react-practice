@@ -4,24 +4,33 @@ import cn from 'classnames';
 
 import usersFromServer from './api/users';
 import categoriesFromServer from './api/categories';
-import { products, filteredProducts } from './helpers/helpers';
+import { products, filterProducts } from './helpers/helpers';
 
 export const App = () => {
-  const [selectedOwner, setSelectedOwner] = useState('');
+  const [selectedOwner, setSelectedOwner] = useState(null);
   const [query, setQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
 
-  const visibleProducts = filteredProducts(
+  const visibleProducts = filterProducts(
     products, query, selectedOwner, selectedCategories,
   );
 
   const handleAddCategory = (category) => {
     setSelectedCategories(prevState => [...prevState, category]);
-    setSelectedOwner('');
+
+    const isAdded = selectedCategories.some(
+      ({ id }) => id === category.id,
+    );
+
+    if (isAdded) {
+      setSelectedCategories(selectedCategories.filter(
+        ({ id }) => id !== category.id,
+      ));
+    }
   };
 
   const handleResetFilters = () => {
-    setSelectedOwner('');
+    setSelectedOwner(null);
     setQuery('');
     setSelectedCategories([]);
   };
@@ -50,7 +59,9 @@ export const App = () => {
                   key={user.id}
                   data-cy="FilterUser"
                   href="#/"
-                  className={cn({ 'is-active': user.id === selectedOwner.id })}
+                  className={cn({
+                    'is-active': user.id === selectedOwner?.id,
+                  })}
                   onClick={() => setSelectedOwner(user)}
                 >
                   {user.name}
@@ -101,20 +112,27 @@ export const App = () => {
                 All
               </a>
 
-              {categoriesFromServer.map(category => (
-                <a
-                  data-cy="Category"
-                  className={cn('button mr-2 my-1', {
-                    'is-info': selectedCategories.some(
-                      selCategory => selCategory.id === category.id,
-                    ),
-                  })}
-                  href="#/"
-                  onClick={() => handleAddCategory(category)}
-                >
-                  {category.title}
-                </a>
-              ))}
+              {categoriesFromServer.map((category) => {
+                const isSelected = selectedCategories.some(
+                  ({ id }) => id === category.id,
+                );
+
+                const { id, title } = category;
+
+                return (
+                  <a
+                    key={id}
+                    data-cy="Category"
+                    className={cn('button mr-2 my-1', {
+                      'is-info': isSelected,
+                    })}
+                    href="#/"
+                    onClick={() => handleAddCategory(category)}
+                  >
+                    {title}
+                  </a>
+                );
+              })}
             </div>
 
             <div className="panel-block">
@@ -202,9 +220,13 @@ export const App = () => {
                         {id}
                       </td>
 
-                      <td data-cy="ProductName">{name}</td>
+                      <td data-cy="ProductName">
+                        {name}
+                      </td>
 
-                      <td data-cy="ProductCategory">{`${category.icon} - ${category.title}`}</td>
+                      <td data-cy="ProductCategory">
+                        {`${category.icon} - ${category.title}`}
+                      </td>
 
                       <td
                         data-cy="ProductUser"
